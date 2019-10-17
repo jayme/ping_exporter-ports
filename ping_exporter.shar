@@ -1,0 +1,163 @@
+# This is a shell archive.  Save it in a file, remove anything before
+# this line, and then unpack it by entering "sh file".  Note, it may
+# create directories; files and directories will be owned by you and
+# have default permissions.
+#
+# This archive contains:
+#
+#	ping_exporter
+#	ping_exporter/distinfo
+#	ping_exporter/files
+#	ping_exporter/files/ping_exporter.yml.sample
+#	ping_exporter/files/ping_exporter.in
+#	ping_exporter/Makefile
+#	ping_exporter/pkg-descr
+#
+echo c - ping_exporter
+mkdir -p ping_exporter > /dev/null 2>&1
+echo x - ping_exporter/distinfo
+sed 's/^X//' >ping_exporter/distinfo << '68481cdde1a04457047b2c5970357a87'
+XTIMESTAMP = 1571270240
+XSHA256 (czerwonk-ping_exporter-0.44_GH0.tar.gz) = 03d0c825fdb8d3c8701743897726ad7960879211238135363879161bbdcd06a7
+XSIZE (czerwonk-ping_exporter-0.44_GH0.tar.gz) = 4595291
+68481cdde1a04457047b2c5970357a87
+echo c - ping_exporter/files
+mkdir -p ping_exporter/files > /dev/null 2>&1
+echo x - ping_exporter/files/ping_exporter.yml.sample
+sed 's/^X//' >ping_exporter/files/ping_exporter.yml.sample << '390be36a76f39f02c3393380408eeabb'
+Xtargets:
+X  - one.one.one.one
+X  - google-public-dns-a.google.com
+X  - google-public-dns-b.google.com
+X
+Xdns:
+X  refresh: 2m15s
+X  nameserver: 1.1.1.1
+X
+Xping:
+X  interval: 2s
+X  timeout: 3s
+X  history-size: 42
+X  payload-size: 120
+390be36a76f39f02c3393380408eeabb
+echo x - ping_exporter/files/ping_exporter.in
+sed 's/^X//' >ping_exporter/files/ping_exporter.in << '914f207031d7546be096d3916b1d0271'
+X#!/bin/sh
+X
+X# $FreeBSD$
+X#
+X# PROVIDE: ping_exporter
+X# REQUIRE: LOGIN
+X# KEYWORD: shutdown
+X#
+X# Add the following lines to /etc/rc.conf.local or /etc/rc.conf
+X# to enable this service:
+X#
+X# ping_exporter_enable (bool):          Set to NO by default.
+X#               Set it to YES to enable ping_exporter.
+X# ping_exporter_user (string):          Set user that ping_exporter will run under
+X#               Default is "root".
+X# ping_exporter_group (string):         Set group that ping_exporter will run under
+X#               Default is "wheel".
+X# ping_exporter_args (string):          Set extra arguments to pass to ping_exporter
+X#               Default is "".
+X# ping_exporter_listen_address (string):Set ip:port that ping_exporter will listen on
+X#               Default is "localhost:9427".
+X# ping_exporter_config (string):        Set configuration file of ping_exporter
+X#               Default is "%%PREFIX%%/etc/ping_exporter.yml".
+X# ping_exporter_log_file (string):      Set log file of ping_exporter
+X#               Default is "/var/log/ping_exporter.log".
+X
+X. /etc/rc.subr
+X
+Xname=ping_exporter
+Xdesc="Ping exporter for use with Prometheus"
+Xrcvar=ping_exporter_enable
+X
+Xload_rc_config $name
+X
+X: ${ping_exporter_enable:=NO}
+X: ${ping_exporter_user:=root}
+X: ${ping_exporter_group:=wheel}
+X: ${ping_exporter_listen_address=localhost:9427}
+X: ${ping_exporter_config="%%PREFIX%%/etc/ping_exporter.yml"}
+X: ${ping_exporter_log_file=/var/log/ping_exporter.log}
+X
+Xpidfile=/var/run/ping_exporter.pid
+Xcommand=/usr/sbin/daemon
+Xprocname="%%PREFIX%%/bin/ping_exporter"
+Xcommand_args="-p ${pidfile} /usr/bin/env ${procname} \
+X    -web.listen-address ${ping_exporter_listen_address} \
+X    -config.path ${ping_exporter_config} \
+X    ${ping_exporter_args} >> ${ping_exporter_log_file} 2>&1"
+X
+Xstart_precmd=ping_exporter_startprecmd
+X
+Xping_exporter_startprecmd()
+X{
+X    if [ ! -e ${pidfile} ]; then
+X        install \
+X            -o ${ping_exporter_user} \
+X            -g ${ping_exporter_group} \
+X            /dev/null ${pidfile};
+X    else
+X        chown ${ping_exporter_user}:${ping_exporter_group} ${pidfile};
+X    fi
+X    if [ ! -e ${ping_exporter_log_file} ]; then
+X        install \
+X            -o ${ping_exporter_user} \
+X            -g ${ping_exporter_group} \
+X            -m 640 \
+X            /dev/null ${ping_exporter_log_file};
+X    else
+X        chown ${ping_exporter_user}:${ping_exporter_group} ${ping_exporter_log_file};
+X    fi
+X}
+X
+Xrun_rc_command "$1"
+914f207031d7546be096d3916b1d0271
+echo x - ping_exporter/Makefile
+sed 's/^X//' >ping_exporter/Makefile << '4a21d70b419df35eac98d9a2dac35e7c'
+X# $FreeBSD: head/sysutils/ping_exporter/Makefile
+X
+XPORTNAME=       ping_exporter
+XDISTVERSION=    0.44
+XCATEGORIES=     sysutils
+X
+XMAINTAINER=     jp+ports@supplntr.io
+XCOMMENT=        Prometheus exporter for ICMP echo requests using https://github.com/digineo/go-ping
+X
+XLICENSE=        APACHE20
+X
+XONLY_FOR_ARCHS= amd64
+X
+XUSES=           go
+XUSE_GITHUB=     yes
+XGH_PROJECT=     ping_exporter
+XGH_ACCOUNT=     czerwonk
+X
+XGO_PKGNAME=     github.com/${GH_ACCOUNT}/${GH_PROJECT}
+X
+XPLIST_FILES=    bin/ping_exporter \
+X                etc/ping_exporter.yml.sample
+X
+XUSE_RC_SUBR=    ping_exporter
+X
+X.include <bsd.port.options.mk>
+X
+Xpost-install:
+X	${INSTALL_DATA} ${PATCHDIR}/ping_exporter.yml.sample \
+X	${STAGEDIR}${PREFIX}/etc/ping_exporter.yml.sample
+X
+X.include <bsd.port.mk>
+4a21d70b419df35eac98d9a2dac35e7c
+echo x - ping_exporter/pkg-descr
+sed 's/^X//' >ping_exporter/pkg-descr << 'bcbfc7c76068b5d9942c22e1c52a1403'
+XPrometheus exporter for ICMP echo requests using https://github.com/digineo/go-ping
+X
+XThis is a simple server that scrapes go-ping stats and exports them via HTTP for
+XPrometheus consumption. The go-ping library is build and maintained by Digineo GmbH
+X
+XWWW: https://github.com/czerwonk/ping_exporter
+bcbfc7c76068b5d9942c22e1c52a1403
+exit
